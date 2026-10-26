@@ -1,0 +1,51 @@
+﻿:root{--sky:#bfe9ff;--grass:#7bd36b;--road:#4a4f5c}
+*{box-sizing:border-box}
+body{margin:0;font-family:"Trebuchet MS",system-ui,sans-serif;background:linear-gradient(var(--sky),#eaf8ff);color:#26324a;min-height:100vh}
+main{max-width:1000px;margin:0 auto;padding:12px}
+h1{text-align:center;margin:6px 0 10px;font-size:clamp(1.6rem,5vw,2.8rem)}
+.track{background:var(--grass);border-radius:18px;padding:8px;border:4px solid #4aa83d}
+.lane{position:relative;height:clamp(52px,10vw,76px);background:var(--road);margin:3px 0;border-radius:10px;
+ background-image:repeating-linear-gradient(90deg,transparent 0 24px,rgba(255,255,255,.35) 24px 44px);background-size:100% 3px;background-repeat:repeat-x;background-position:0 50%}
+.lane .name-unused{position:absolute;left:8px;top:4px;color:#fff;font-weight:bold;font-size:.85rem;z-index:3;text-shadow:0 1px 3px #000}
+.lane .start{position:absolute;left:12%;top:0;bottom:0;width:4px;background:#fff;opacity:.6}
+.lane .finish{position:absolute;right:0;top:0;bottom:0;width:22px;background:repeating-conic-gradient(#000 0 25%,#fff 0 50%) 0 0/11px 11px;border-radius:0 10px 10px 0}
+.runner{position:absolute;bottom:0;left:0;height:100%;aspect-ratio:1;will-change:left;z-index:2}
+.runner span{position:absolute;left:100%;top:50%;margin-left:4px;transform:translateY(-50%);background:#fff;color:#26324a;font-size:.7rem;font-weight:bold;padding:0 6px;border-radius:8px;box-shadow:0 1px 3px rgba(0,0,0,.4)}
+.runner img,.avatar{width:100%;height:100%;display:block;border-radius:50%;object-fit:cover;object-position:50% 20%;background:#fff;border:3px solid #fff;box-shadow:0 4px 6px rgba(0,0,0,.4)}
+.runner.running img{animation:bounce .32s ease-in-out infinite alternate}
+.runner.won img{animation:cheer .5s ease-in-out infinite alternate}
+.lane:nth-child(even) .runner.running img{animation-duration:.27s}
+@keyframes bounce{from{transform:translateY(0) rotate(-5deg)}to{transform:translateY(-9px) rotate(5deg)}}
+@keyframes cheer{from{transform:scale(1) rotate(-6deg)}to{transform:scale(1.15) rotate(6deg)}}
+.controls{text-align:center;margin:16px 0}
+button{font:inherit;cursor:pointer;border:0}
+.go{background:#ff4d4d;color:#fff;font-size:clamp(2rem,8vw,3.4rem);font-weight:900;padding:.2em 1.4em;border-radius:999px;box-shadow:0 8px 0 #b52a2a;letter-spacing:.08em}
+.go:active{transform:translateY(5px);box-shadow:0 3px 0 #b52a2a}
+.go:disabled{opacity:.5;cursor:not-allowed}
+.go.small{font-size:1.3rem;margin:6px}
+.board{background:#fff;border-radius:18px;padding:12px;text-align:center;box-shadow:0 4px 12px rgba(0,0,0,.15)}
+.board h2{margin:0 0 8px}
+#tally{list-style:none;margin:0 0 10px;padding:0;display:grid;grid-template-columns:repeat(auto-fit,minmax(110px,1fr));gap:8px}
+#tally li{display:flex;flex-direction:column;align-items:center;background:#eef6ff;border-radius:12px;padding:6px}
+#tally img{height:64px;width:64px}
+#tally b{display:block;font-size:1.8rem}
+#tally li.lead{background:#fff2a8}
+.reset{background:#e9edf5;color:#3a4560;padding:.6em 1.2em;border-radius:999px;font-weight:bold;font-size:1rem}
+.overlay{position:fixed;inset:0;background:rgba(20,30,60,.6);display:flex;align-items:center;justify-content:center;z-index:10;padding:12px}
+.overlay[hidden]{display:none}
+#count{font-size:min(55vw,320px);font-weight:900;color:#fff;text-shadow:0 8px 0 #ff4d4d,0 0 30px #000;animation:pop .9s ease-out}
+@keyframes pop{from{transform:scale(2.2);opacity:0}30%{opacity:1}to{transform:scale(.8);opacity:.9}}
+.card{position:relative;overflow:hidden;background:#fff;border-radius:24px;padding:20px 28px;text-align:center;max-width:420px;width:100%;animation:drop .5s cubic-bezier(.3,1.5,.5,1)}
+.winner img{height:min(40vh,260px);width:min(40vh,260px);animation:cheer .5s infinite alternate}
+.winner h2{font-size:2.4rem;margin:4px 0}
+@keyframes drop{from{transform:scale(.3);opacity:0}}
+.confetti{position:absolute;inset:0;pointer-events:none}
+.confetti i{position:absolute;top:-12px;width:10px;height:14px;animation:fall linear forwards}
+@keyframes fall{to{transform:translateY(520px) rotate(720deg)}}
+@media (prefers-reduced-motion:reduce){.runner.running img,.runner.won img,.winner img{animation:none}}
+
+#tally img,.winner img{border-radius:50%;object-fit:cover;object-position:50% 20%;background:#fff;border:4px solid #ffd23f}
+
+
+.runner.running span,.runner.won span{display:none}
+.card p{font-size:1.4rem;margin:4px 0 10px}

@@ -1,0 +1,20 @@
+﻿<!doctype html><meta charset="utf-8"><title>Cousin Racer tests</title>
+<body style="font-family:monospace"><h1 id="r">running…</h1><pre id="o"></pre>
+<script src="../game.js"></script>
+<script>
+var C=CousinRacer,out=[],fail=0;
+function t(n,c){out.push((c?'PASS ':'FAIL ')+n);if(!c)fail++;}
+t('six cousins in order',C.COUSINS.join()==='Bobby,Mila,Luke,Dinny,Bill,Tony');
+var seen={};for(var i=0;i<600;i++)seen[C.pickWinner()]=1;
+t('every cousin can win',Object.keys(seen).length===6);
+t('pickWinner bounds',C.pickWinner(function(){return 0.999999})===5&&C.pickWinner(function(){return 0})===0);
+var mem={d:{},getItem:function(k){return this.d[k]||null},setItem:function(k,v){this.d[k]=v}};
+var tl=C.loadTally(mem);t('empty tally zeros',C.COUSINS.every(function(n){return tl[n]===0}));
+tl.Mila=3;C.saveTally(mem,tl);t('tally persists',C.loadTally(mem).Mila===3);
+mem.d[C.KEY]='garbage';t('corrupt storage safe',C.loadTally(mem).Bobby===0);
+for(var w=0;w<6;w++){var p=C.planRace(w);
+ t('winner '+w+' finishes first',p.every(function(x,i){return i===w||x.duration>p[w].duration}));
+ t('all finish at 1',p.every(function(x){return C.progress(x,x.duration)===1&&C.progress(x,0)===0}));}
+document.getElementById('o').textContent=out.join('\n');
+document.getElementById('r').textContent=fail?fail+' FAILED':'ALL PASSED';
+</script>

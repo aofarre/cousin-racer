@@ -1,0 +1,43 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Cousin Racer</title>
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<main>
+  <h1>&#127937; Cousin Racer &#127937;</h1>
+  <section class="track" id="track" aria-label="Race track"></section>
+  <div class="controls">
+    <button id="go" class="go" type="button">GO!</button>
+  </div>
+  <section class="board" aria-label="Win tally">
+    <h2>Wins</h2>
+    <ul id="tally"></ul>
+    <button id="reset" class="reset" type="button">Reset tally</button>
+  </section>
+</main>
+<div id="countdown" class="overlay" hidden aria-live="assertive"><span id="count"></span></div>
+<div id="winner" class="overlay winner" hidden role="dialog" aria-live="polite">
+  <div class="card">
+    <div class="confetti" id="confetti"></div>
+    <img id="winner-img" alt="">
+    <h2 id="winner-name"></h2>
+    <p>wins the race! &#127881;</p>
+    <button id="again" class="go small" type="button">Race again</button>
+  </div>
+</div>
+<div id="confirm" class="overlay" hidden role="dialog" aria-modal="true">
+  <div class="card">
+    <h2>Reset all wins?</h2>
+    <p>This sets every cousin back to 0.</p>
+    <button id="confirm-yes" class="reset" type="button">Yes, reset</button>
+    <button id="confirm-no" class="go small" type="button">Keep wins</button>
+  </div>
+</div>
+<script src="game.js"></script>
+</body>
+</html>
+
