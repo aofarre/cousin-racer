@@ -60,7 +60,7 @@
     }
     function tone(freq, start, dur, type, vol) {
       if (!ctx || muted) return;
-      var o = ctx.createOscillator(), g = ctx.createGain(), t = ctx.currentTime + start;
+      var o = ctx.createOscillator(), g = ctx.createGain(), t = ctx.currentTime + 0.05 + start;
       o.type = type || 'square'; o.frequency.value = freq;
       g.gain.setValueAtTime(0.0001, t);
       g.gain.exponentialRampToValueAtTime(vol || 0.12, t + 0.02);
@@ -77,20 +77,20 @@
         try { root.localStorage.setItem('cousinRacer.muted', m ? '1' : '0'); } catch (e) {}
         if (m) sound.stopMusic();
       },
-      beep: function (go) { tone(go ? 880 : 440, 0, go ? 0.5 : 0.25, 'square', 0.15); },
+      beep: function (go) { tone(go ? 880 : 440, 0, go ? 0.5 : 0.25, 'square', 0.4); },
       startMusic: function () {
         sound.stopMusic(); step = 0;
         function tick() {
           var i = step++ % 8;
-          tone(bass[i], 0, 0.16, 'triangle', 0.2);
-          tone(lead[i], 0, 0.12, 'square', 0.05);
+          tone(bass[i], 0, 0.16, 'triangle', 0.5);
+          tone(lead[i], 0, 0.12, 'square', 0.12);
         }
         tick(); timer = setInterval(tick, 160);
       },
       stopMusic: function () { if (timer) { clearInterval(timer); timer = null; } },
       cheer: function () {
-        [523, 659, 784, 1047, 784, 1047].forEach(function (f, i) { tone(f, i * 0.13, 0.25, 'square', 0.12); });
-        [1047, 1319, 1568].forEach(function (f, i) { tone(f, 0.85 + i * 0.1, 0.7, 'triangle', 0.12); });
+        [523, 659, 784, 1047, 784, 1047].forEach(function (f, i) { tone(f, i * 0.13, 0.25, 'square', 0.3); });
+        [1047, 1319, 1568].forEach(function (f, i) { tone(f, 0.85 + i * 0.1, 0.7, 'triangle', 0.35); });
       }
     };
   })();
@@ -196,7 +196,7 @@
 
   var mute = $('mute');
   function showMute() { mute.textContent = sound.isMuted() ? '🔇 Sound off' : '🔊 Sound on'; mute.setAttribute('aria-pressed', sound.isMuted()); }
-  mute.onclick = function () { sound.init(); sound.setMuted(!sound.isMuted()); showMute(); };
+  mute.onclick = function () { sound.init(); sound.setMuted(!sound.isMuted()); showMute(); if (!sound.isMuted()) sound.beep(true); };
   showMute();
   $('go').onclick = start;
   $('again').onclick = function () { $('winner').hidden = true; resetPositions(); $('go').focus(); };
