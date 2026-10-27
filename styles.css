@@ -49,3 +49,4 @@ button{font:inherit;cursor:pointer;border:0}
 
 .runner.running span,.runner.won span{display:none}
 .card p{font-size:1.4rem;margin:4px 0 10px}
+.mute{margin-top:14px}

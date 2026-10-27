@@ -1,4 +1,4 @@
-﻿(function (root) {
+(function (root) {
   var COUSINS = ['Bobby', 'Mila', 'Luke', 'Dinny', 'Bill', 'Tony'];
   var KEY = 'cousinRacer.wins.v1';
   var START = 0.12; // fraction of lane where racers begin crossing the start line
@@ -51,6 +51,49 @@
 
   var $ = function (id) { return document.getElementById(id); };
   var img = function (n) { return 'assets/' + n.toLowerCase() + '.png'; };
+  var sound = (function () {
+    var ctx = null, muted = false, timer = null, step = 0;
+    try { muted = root.localStorage.getItem('cousinRacer.muted') === '1'; } catch (e) {}
+    function init() {
+      if (!ctx) { var A = root.AudioContext || root.webkitAudioContext; if (A) ctx = new A(); }
+      if (ctx && ctx.state === 'suspended') ctx.resume();
+    }
+    function tone(freq, start, dur, type, vol) {
+      if (!ctx || muted) return;
+      var o = ctx.createOscillator(), g = ctx.createGain(), t = ctx.currentTime + start;
+      o.type = type || 'square'; o.frequency.value = freq;
+      g.gain.setValueAtTime(0.0001, t);
+      g.gain.exponentialRampToValueAtTime(vol || 0.12, t + 0.02);
+      g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+      o.connect(g); g.connect(ctx.destination);
+      o.start(t); o.stop(t + dur + 0.05);
+    }
+    var bass = [110, 110, 165, 110, 147, 147, 196, 147], lead = [440, 554, 659, 554, 587, 740, 880, 740];
+    return {
+      init: init,
+      isMuted: function () { return muted; },
+      setMuted: function (m) {
+        muted = m;
+        try { root.localStorage.setItem('cousinRacer.muted', m ? '1' : '0'); } catch (e) {}
+        if (m) sound.stopMusic();
+      },
+      beep: function (go) { tone(go ? 880 : 440, 0, go ? 0.5 : 0.25, 'square', 0.15); },
+      startMusic: function () {
+        sound.stopMusic(); step = 0;
+        function tick() {
+          var i = step++ % 8;
+          tone(bass[i], 0, 0.16, 'triangle', 0.2);
+          tone(lead[i], 0, 0.12, 'square', 0.05);
+        }
+        tick(); timer = setInterval(tick, 160);
+      },
+      stopMusic: function () { if (timer) { clearInterval(timer); timer = null; } },
+      cheer: function () {
+        [523, 659, 784, 1047, 784, 1047].forEach(function (f, i) { tone(f, i * 0.13, 0.25, 'square', 0.12); });
+        [1047, 1319, 1568].forEach(function (f, i) { tone(f, 0.85 + i * 0.1, 0.7, 'triangle', 0.12); });
+      }
+    };
+  })();
   var tally = loadTally(root.localStorage);
   var racing = false, runners = [], lanes = [];
 
@@ -87,8 +130,8 @@
     var el = $('countdown'), c = $('count'), n = 3;
     el.hidden = false;
     (function step() {
-      if (n === 0) { el.hidden = true; done(); return; }
-      c.textContent = n;
+      if (n === 0) { el.hidden = true; sound.beep(true); done(); return; }
+      c.textContent = n; sound.beep(false);
       c.style.animation = 'none'; void c.offsetWidth; c.style.animation = '';
       n--;
       setTimeout(step, 900);
@@ -110,6 +153,7 @@
 
   function finish(winner) {
     var name = COUSINS[winner];
+    sound.stopMusic(); sound.cheer();
     tally[name]++;
     saveTally(root.localStorage, tally);
     renderTally();
@@ -125,6 +169,7 @@
   function run(winner) {
     var plan = planRace(winner), t0 = performance.now(), last = plan.map(function () { return 0; });
     runners.forEach(function (r) { r.classList.add('running'); });
+    sound.startMusic();
     (function frame(now) {
       var t = now - t0, all = true;
       plan.forEach(function (p, i) {
@@ -140,6 +185,7 @@
 
   function start() {
     if (racing) return;
+    sound.init();
     racing = true;
     $('go').disabled = true;
     $('winner').hidden = true;
@@ -148,6 +194,10 @@
     countdown(function () { run(winner); });
   }
 
+  var mute = $('mute');
+  function showMute() { mute.textContent = sound.isMuted() ? '🔇 Sound off' : '🔊 Sound on'; mute.setAttribute('aria-pressed', sound.isMuted()); }
+  mute.onclick = function () { sound.init(); sound.setMuted(!sound.isMuted()); showMute(); };
+  showMute();
   $('go').onclick = start;
   $('again').onclick = function () { $('winner').hidden = true; resetPositions(); $('go').focus(); };
   $('reset').onclick = function () { $('confirm').hidden = false; $('confirm-no').focus(); };
