@@ -52,46 +52,73 @@
   var $ = function (id) { return document.getElementById(id); };
   var img = function (n) { return 'assets/' + n.toLowerCase() + '.png'; };
   var sound = (function () {
-    var ctx = null, muted = false, timer = null, step = 0;
+    var RATE = 22050, muted = false, clips = null, music = null;
     try { muted = root.localStorage.getItem('cousinRacer.muted') === '1'; } catch (e) {}
-    function init() {
-      if (!ctx) { var A = root.AudioContext || root.webkitAudioContext; if (A) ctx = new A(); }
-      if (ctx && ctx.state === 'suspended') ctx.resume();
+
+    // Renders notes [freq, startSec, durSec, wave, vol] to a WAV blob URL.
+    function render(notes, total) {
+      var n = Math.floor(total * RATE), d = new Float32Array(n);
+      notes.forEach(function (nt) {
+        var s = Math.floor(nt[1] * RATE), len = Math.floor(nt[2] * RATE);
+        for (var i = 0; i < len && s + i < n; i++) {
+          var ph = (i / RATE) * nt[0] % 1;
+          var w = nt[3] === 'sq' ? (ph < 0.5 ? 1 : -1) : 4 * Math.abs(ph - 0.5) - 1;
+          var env = Math.min(1, i / 200) * Math.pow(1 - i / len, 1.5);
+          d[s + i] += w * env * nt[4];
+        }
+      });
+      var buf = new ArrayBuffer(44 + n * 2), v = new DataView(buf);
+      function str(o, t) { for (var k = 0; k < t.length; k++) v.setUint8(o + k, t.charCodeAt(k)); }
+      str(0, 'RIFF'); v.setUint32(4, 36 + n * 2, true); str(8, 'WAVEfmt ');
+      v.setUint32(16, 16, true); v.setUint16(20, 1, true); v.setUint16(22, 1, true);
+      v.setUint32(24, RATE, true); v.setUint32(28, RATE * 2, true); v.setUint16(32, 2, true);
+      v.setUint16(34, 16, true); str(36, 'data'); v.setUint32(40, n * 2, true);
+      for (var j = 0; j < n; j++) v.setInt16(44 + j * 2, Math.max(-1, Math.min(1, d[j])) * 32000, true);
+      return URL.createObjectURL(new Blob([buf], { type: 'audio/wav' }));
     }
-    function tone(freq, start, dur, type, vol) {
-      if (!ctx || muted) return;
-      var o = ctx.createOscillator(), g = ctx.createGain(), t = ctx.currentTime + 0.05 + start;
-      o.type = type || 'square'; o.frequency.value = freq;
-      g.gain.setValueAtTime(0.0001, t);
-      g.gain.exponentialRampToValueAtTime(vol || 0.12, t + 0.02);
-      g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
-      o.connect(g); g.connect(ctx.destination);
-      o.start(t); o.stop(t + dur + 0.05);
+
+    function build() {
+      var bass = [110, 110, 165, 110, 147, 147, 196, 147], lead = [440, 554, 659, 554, 587, 740, 880, 740], m = [];
+      for (var r = 0; r < 2; r++) bass.forEach(function (f, i) {
+        m.push([f, (r * 8 + i) * 0.16, 0.16, 'tri', 0.5], [lead[i], (r * 8 + i) * 0.16, 0.12, 'sq', 0.12]);
+      });
+      var c = [];
+      [523, 659, 784, 1047, 784, 1047].forEach(function (f, i) { c.push([f, i * 0.13, 0.25, 'sq', 0.3]); });
+      [1047, 1319, 1568].forEach(function (f, i) { c.push([f, 0.85 + i * 0.1, 0.7, 'tri', 0.35]); });
+      clips = {
+        tick: render([[440, 0, 0.3, 'sq', 0.5]], 0.3),
+        go: render([[880, 0, 0.6, 'sq', 0.5]], 0.6),
+        cheer: render(c, 1.7),
+        music: render(m, 2.56)
+      };
     }
-    var bass = [110, 110, 165, 110, 147, 147, 196, 147], lead = [440, 554, 659, 554, 587, 740, 880, 740];
+
+    function play(name) {
+      if (muted) return null;
+      if (!clips) build();
+      var a = new Audio(clips[name]);
+      a.volume = 1;
+      var p = a.play();
+      if (p && p.catch) p.catch(function () {});
+      return a;
+    }
+
     return {
-      init: init,
+      init: function () { if (!clips) build(); },
       isMuted: function () { return muted; },
       setMuted: function (m) {
         muted = m;
         try { root.localStorage.setItem('cousinRacer.muted', m ? '1' : '0'); } catch (e) {}
         if (m) sound.stopMusic();
       },
-      beep: function (go) { tone(go ? 880 : 440, 0, go ? 0.5 : 0.25, 'square', 0.4); },
+      beep: function (go) { play(go ? 'go' : 'tick'); },
       startMusic: function () {
-        sound.stopMusic(); step = 0;
-        function tick() {
-          var i = step++ % 8;
-          tone(bass[i], 0, 0.16, 'triangle', 0.5);
-          tone(lead[i], 0, 0.12, 'square', 0.12);
-        }
-        tick(); timer = setInterval(tick, 160);
+        sound.stopMusic();
+        music = play('music');
+        if (music) music.loop = true;
       },
-      stopMusic: function () { if (timer) { clearInterval(timer); timer = null; } },
-      cheer: function () {
-        [523, 659, 784, 1047, 784, 1047].forEach(function (f, i) { tone(f, i * 0.13, 0.25, 'square', 0.3); });
-        [1047, 1319, 1568].forEach(function (f, i) { tone(f, 0.85 + i * 0.1, 0.7, 'triangle', 0.35); });
-      }
+      stopMusic: function () { if (music) { music.pause(); music = null; } },
+      cheer: function () { play('cheer'); }
     };
   })();
   var tally = loadTally(root.localStorage);
